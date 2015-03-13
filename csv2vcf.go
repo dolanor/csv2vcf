@@ -3,9 +3,11 @@ package main
 import (
 	"bitbucket.org/llg/vcard"
 	"encoding/csv"
+	"fmt"
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -26,7 +28,6 @@ func main() {
 		log.Println(err)
 		os.Exit(2)
 	}
-	log.Print(rawCsvData)
 
 	vcf, err := os.Create(os.Args[2])
 	if err != nil {
@@ -37,6 +38,7 @@ func main() {
 
 	vciw := vcard.NewDirectoryInfoWriter(vcf)
 
+	recNb := 0
 	for _, record := range rawCsvData {
 		var vc vcard.VCard
 		names := strings.Split(record[0], " ")
@@ -59,7 +61,9 @@ func main() {
 		vc.Emails = append(vc.Emails, vcard.Email{Address: record[2]})
 		vc.Telephones = append(vc.Telephones, vcard.Telephone{Number: record[3]})
 		vc.Org = append(vc.Org, record[4])
-		log.Print(vc)
 		vc.WriteTo(vciw)
+		recNb++
 	}
+
+	fmt.Println(strconv.Itoa(recNb) + " record(s) written")
 }

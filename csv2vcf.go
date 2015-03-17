@@ -55,8 +55,7 @@ func main() {
 			}
 		}
 		street := strings.Join(addRec[:streetEnd], " ")
-
-		address := vcard.Address{Street: street, PostalCode: addRec[2], Locality: addRec[3]}
+		address := vcard.Address{Street: street, PostalCode: addRec[streetEnd], Locality: addRec[streetEnd+1]}
 		vc.Addresses = append(vc.Addresses, address)
 		vc.Emails = append(vc.Emails, vcard.Email{Address: record[2]})
 		vc.Telephones = append(vc.Telephones, vcard.Telephone{Number: record[3]})

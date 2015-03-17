@@ -64,5 +64,5 @@ func main() {
 		recNb++
 	}
 
-	fmt.Println(strconv.Itoa(recNb) + " record(s) written")
+	fmt.Println(strconv.Itoa(recNb) + " contact(s) written")
 }

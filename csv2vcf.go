@@ -41,25 +41,37 @@ func main() {
 	recNb := 0
 	for _, record := range rawCsvData {
 		var vc vcard.VCard
-		names := strings.Split(record[0], " ")
-		vc.FormattedName = record[0]
-		vc.GivenNames = append(vc.GivenNames, names[0])
-		vc.FamilyNames = append(vc.FamilyNames, names[1])
-		addRec := strings.Fields(record[1])
-		var streetEnd int
-		for idx, val := range addRec {
-			if match, err := regexp.Match("[0-9]{5}", []byte(val)); err == nil {
-				if match == true {
-					streetEnd = idx
-				}
+		if strings.Trim(record[0], " \t") != "" {
+			names := strings.Split(record[0], " ")
+			vc.FormattedName = record[0]
+			vc.GivenNames = append(vc.GivenNames, names[0])
+			if len(names) > 1 {
+				vc.FamilyNames = append(vc.FamilyNames, names[1])
 			}
 		}
-		street := strings.Join(addRec[:streetEnd], " ")
-		address := vcard.Address{Street: street, PostalCode: addRec[streetEnd], Locality: addRec[streetEnd+1]}
-		vc.Addresses = append(vc.Addresses, address)
-		vc.Emails = append(vc.Emails, vcard.Email{Address: record[2]})
-		vc.Telephones = append(vc.Telephones, vcard.Telephone{Number: record[3]})
-		vc.Org = append(vc.Org, record[4])
+		if strings.Trim(record[1], " \t") != "" {
+			addRec := strings.Fields(record[1])
+			var streetEnd int
+			for idx, val := range addRec {
+				if match, err := regexp.Match("[0-9]{5}", []byte(val)); err == nil {
+					if match == true {
+						streetEnd = idx
+					}
+				}
+			}
+			street := strings.Join(addRec[:streetEnd], " ")
+			address := vcard.Address{Street: street, PostalCode: addRec[streetEnd], Locality: addRec[streetEnd+1]}
+			vc.Addresses = append(vc.Addresses, address)
+		}
+		if strings.Trim(record[2], " \t") != "" {
+			vc.Emails = append(vc.Emails, vcard.Email{Address: record[2]})
+		}
+		if strings.Trim(record[3], " \t") != "" {
+			vc.Telephones = append(vc.Telephones, vcard.Telephone{Number: record[3]})
+		}
+		if strings.Trim(record[4], " \t") != "" {
+			vc.Org = append(vc.Org, record[4])
+		}
 		vc.WriteTo(vciw)
 		recNb++
 	}

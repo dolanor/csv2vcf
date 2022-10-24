@@ -1,42 +1,56 @@
 package main
 
 import (
-	"bitbucket.org/llg/vcard"
+	"context"
 	"encoding/csv"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
+
+	"bitbucket.org/llg/vcard"
+	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
-func main() {
-	csvFile, err := os.Open(os.Args[1])
+func csv2vcfCommand(ctx context.Context, args []string) error {
+	csvFilePath := args[0]
+	vcfFilePath := args[1]
+
+	csvFile, err := os.Open(csvFilePath)
 	if err != nil {
-		log.Print(err)
-		os.Exit(1)
+		return err
 	}
 	defer csvFile.Close()
 
-	reader := csv.NewReader(csvFile)
-	reader.FieldsPerRecord = -1
-
-	rawCsvData, err := reader.ReadAll()
-
+	vcf, err := os.Create(vcfFilePath)
 	if err != nil {
-		log.Println(err)
-		os.Exit(2)
-	}
-
-	vcf, err := os.Create(os.Args[2])
-	if err != nil {
-		log.Print(err)
-		os.Exit(3)
+		return err
 	}
 	defer vcf.Close()
 
-	vciw := vcard.NewDirectoryInfoWriter(vcf)
+	recNb, err := parseCSVAndConvertToVCF(vcf, csvFile)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("%d contact(s) written", recNb)
+	return nil
+}
+
+func parseCSVAndConvertToVCF(vcfw io.Writer, csvr io.Reader) (int, error) {
+	reader := csv.NewReader(csvr)
+	reader.FieldsPerRecord = -1
+
+	// use .Read() instead if memory issue with giant CSV files. Don't believe there are people
+	// with so many contacts, though.
+	rawCsvData, err := reader.ReadAll()
+	if err != nil {
+		return 0, fmt.Errorf("reader read all: %w", err)
+	}
+
+	vciw := vcard.NewDirectoryInfoWriter(vcfw)
 
 	recNb := 0
 	for _, record := range rawCsvData {
@@ -53,7 +67,11 @@ func main() {
 			addRec := strings.Fields(record[1])
 			var streetEnd int
 			for idx, val := range addRec {
-				if match, err := regexp.Match("[0-9]{5}", []byte(val)); err == nil {
+				match, err := regexp.Match("[0-9]{5}", []byte(val))
+				if err != nil {
+					return 0, fmt.Errorf("regexp match: %w", err)
+				}
+				if err == nil {
 					if match == true {
 						streetEnd = idx
 					}
@@ -76,5 +94,34 @@ func main() {
 		recNb++
 	}
 
-	fmt.Println(strconv.Itoa(recNb) + " contact(s) written")
+	return recNb, nil
+}
+
+func main() {
+	rootCmd := &ffcli.Command{
+		Exec:       csv2vcfCommand,
+		ShortUsage: "csv2vcf <file.csv> <file.vcf>",
+		LongHelp: `
+FILE.CSV should not have a column header and should have column ordered as
+- 0: FirstName FamilyName # firstname and family name separated by space.
+                          # Will take the whole column as a formatted name.
+- 1: Street info ZipCode City # mostly works for french address. Very limited.
+                              # Contributions welcomed :)
+- 2: email@address.com
+- 3: TelephoneNumber # using international number would be more useful when
+                     # travelling abroad and calling friends.
+- 4: OrganizationName`,
+	}
+
+	if len(os.Args) < 3 {
+		log.Println("not enough arguments to the command line")
+		log.Fatal(rootCmd.ShortUsage)
+
+	}
+
+	err := rootCmd.ParseAndRun(context.Background(), os.Args[1:])
+	if err != nil {
+		log.Println(err)
+		log.Fatal(rootCmd.LongHelp)
+	}
 }

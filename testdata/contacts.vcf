@@ -1,0 +1,18 @@
+BEGIN:VCARD
+VERSION:3.0
+FN:Tanguy Herrmann
+N:Herrmann;Tanguy;;;
+ADR;type:;;1 rue des tomates;Paris;;75001;
+TEL;type:+331234567890
+EMAIL;type: tanguy@tomates.fake
+ORG: Dagger
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Shanguy Herrmann
+N:Herrmann;Shanguy;;;
+ADR;type:;;1 rue des concombres;Tête-de-Veau;;75002;
+TEL;type:+331234567891
+EMAIL;type: shanguy@tomates.fake
+ORG: Cucumber
+END:VCARD
